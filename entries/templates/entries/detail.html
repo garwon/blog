@@ -8,7 +8,7 @@
   <ul class="well nav nav-list">
     <li><h4>Tags</h4></li>
     {% for tag in entry.tags %}
-      <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug) }}">{{ tag.name }}</a></li>
+      <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug) }}">{{ tag.name | sort }}</a></li>
     {% endfor %}
   </ul>
   <p>Published {{ entry.created_timestamp.strftime('%m/%d/%Y') }}</p>

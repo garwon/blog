@@ -7,7 +7,8 @@
 {% block content %}
   <ul>
     {% for tag in object_list.items %}
-      <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug)}}">{{ tag.name }}</a></li>
+      <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug) }}">{{ tag.name }}</a></li>
     {% endfor %}
   </ul>
+  {% include "includes/page_links.html" %}
 {% endblock %}
