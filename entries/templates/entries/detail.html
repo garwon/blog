@@ -8,12 +8,15 @@
   <ul class="well nav nav-list">
     <li><h4>Tags</h4></li>
     {% for tag in entry.tags %}
-      <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug) }}">{{ tag.name | sort }}</a></li>
+      <li><a href="{{ url_for('entries.tag_detail', slug=tag.slug) }}">{{ tag.name }}</a></li>
     {% endfor %}
   </ul>
+  <ul class="well nav nav-list">
+    <li><h4>Action</h4></li>
+    <li><a href="{{ url_for('entries.edit', slug=entry.slug) }}">Edit</a></li>
+    <li><a href="{{ url_for('entries.delete', slug=entry.slug) }}">Delete</a></li>
+  </ul>
   <p>Published {{ entry.created_timestamp.strftime('%m/%d/%Y') }}</p>
-  <a href="{{ url_for('entries.edit', slug=entry.slug) }}">Edit</a>
-  <a href="{{ url_for('entries.delete', slug=entry.slug) }}">Delete</a>
 {% endblock %}
 
 {% block content %}
