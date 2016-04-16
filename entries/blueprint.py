@@ -1,8 +1,11 @@
+import os
+
 from flask import Blueprint, render_template, flash, request, redirect, url_for
+from werkzeug import secure_filename
 from models import Entry, Tag
 from helpers import object_list
-from entries.forms import EntryForm
-from app import db
+from entries.forms import EntryForm, ImageForm
+from app import app, db
 
 entries = Blueprint('entries', __name__, template_folder='templates')
 
@@ -26,6 +29,22 @@ def get_entry_or_404(slug):
 def index():
     entries = Entry.query.order_by(Entry.created_timestamp.desc())
     return entry_list('entries/index.html', entries)
+
+@entries.route('/image-upload', methods=['GET', 'POST'])
+def image_upload():
+    if request.method == 'POST':
+        form = ImageForm(request.form)
+        if form.validate():
+            image_file = request.files['file']
+            filename = os.path.join(app.config['IMAGES_DIR'],
+                                    secure_filename(image_file.filename))
+            image_file.save(filename)
+            flash('Saved %s' % os.path.basename(filename), 'success')
+            return redirect(url_for('entries.index'))
+    else:
+         form = ImageForm()
+
+    return render_template('entries/image_upload.html', form=form)
 
 @entries.route('/tags/')
 def tag_index():
@@ -54,18 +73,16 @@ def create():
 
 @entries.route('/<slug>/')
 def detail(slug):
-    #entry = Entry.query.filter(Entry.slug == slug).first_or_404()
     entry = get_entry_or_404(slug)
     return render_template('entries/detail.html', entry=entry)
 
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
 def edit(slug):
-    #entry = Entry.query.filter(Entry.slug == slug).first_or_404()
     entry = get_entry_or_404(slug)
     if request.method == 'POST':
         form = EntryForm(request.form, obj=entry)
         if form.validate():
-           #entry = Entry(title = form.title.data,
+           #entry = entry.update(title = form.title.data,
            #    body = form.dody.data,
            #    status = form.status.data)
            entry = form.save_entry(entry)
@@ -79,7 +96,6 @@ def edit(slug):
 
 @entries.route('/<slug>/delete/', methods=['GET', 'POST'])
 def delete(slug):
-    #entry = Entry.query.filter(Entry.slug == slug).first_or_404()
     entry = get_entry_or_404(slug)
     if request.method == 'POST':
         entry.status = Entry.STATUS_DELETED
