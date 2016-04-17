@@ -82,9 +82,6 @@ def edit(slug):
     if request.method == 'POST':
         form = EntryForm(request.form, obj=entry)
         if form.validate():
-           #entry = entry.update(title = form.title.data,
-           #    body = form.dody.data,
-           #    status = form.status.data)
            entry = form.save_entry(entry)
            db.session.add(entry)
            db.session.commit()

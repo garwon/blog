@@ -6,7 +6,7 @@
 {% block content_title %}Edit{% endblock %}
 
 {% block content %}
-  <form action="{{ url_for('entries.create') }}" class="form form-horizontal" method="post">
+  <form action="{{ url_for('entries.edit', slug=entry.slug) }}" class="form form-horizontal" method="post">
     {% for field in form %}
       {{ form_field(field) }}
     {% endfor %}
