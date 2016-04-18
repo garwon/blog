@@ -1,6 +1,7 @@
 import os
 
 from flask import Blueprint, render_template, flash, request, redirect, url_for
+from flask.ext.login import login_required
 from werkzeug import secure_filename
 from models import Entry, Tag
 from helpers import object_list
@@ -31,6 +32,7 @@ def index():
     return entry_list('entries/index.html', entries)
 
 @entries.route('/image-upload', methods=['GET', 'POST'])
+@login_required
 def image_upload():
     if request.method == 'POST':
         form = ImageForm(request.form)
@@ -58,6 +60,7 @@ def tag_detail(slug):
     return entry_list('entries/tag_detail.html', entries, tag=tag)
 
 @entries.route('/create/', methods=['GET', 'POST'])
+@login_required
 def create():
     if request.method == 'POST':
        form = EntryForm(request.form)
@@ -77,6 +80,7 @@ def detail(slug):
     return render_template('entries/detail.html', entry=entry)
 
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
+@login_required
 def edit(slug):
     entry = get_entry_or_404(slug)
     if request.method == 'POST':
@@ -92,6 +96,7 @@ def edit(slug):
     return render_template('entries/edit.html', entry=entry, form=form)
 
 @entries.route('/<slug>/delete/', methods=['GET', 'POST'])
+@login_required
 def delete(slug):
     entry = get_entry_or_404(slug)
     if request.method == 'POST':
