@@ -2,6 +2,7 @@ import datetime, re
 
 from app import db
 from app import login_manager
+from app import bcrypt
 
 def slugify(s):
     return re.sub('[^\w]+', '-', s).lower()
@@ -73,8 +74,11 @@ class User(db.Model):
         if self.name:
             self.slug = slugify(self.name)
 
+    def __repr__(self):
+        return '<User %s>' % self.name
+
     def get_id(self):
-        return unicode(self.id)
+        return self.id
     
     def is_authenticated(self):
         return True
@@ -83,6 +87,27 @@ class User(db.Model):
         return self.active
 
     def is_anonymous(self):
+        return False
+
+    @staticmethod
+    def make_password(plaintext):
+        return bcrypt.generate_password_hash(plaintext)
+
+    def check_password(self, raw_password):
+        return bcrypt.check_password_hash(self.password_hash, raw_password)
+
+    @classmethod
+    def create(cls, email, password, **kwargs):
+        return User(
+            email = email,
+            password_hash = User.make_password(password),
+            **kwargs)
+
+    @staticmethod
+    def authenticate(email, password):
+        user = User.query.filter(User.email == email).first()
+        if user and user.check_password(password):
+            return user
         return False
 
 @login_manager.user_loader
