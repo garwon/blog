@@ -1,6 +1,6 @@
 import os
 
-from flask import Blueprint, render_template, flash, request, redirect, url_for
+from flask import Blueprint, render_template, flash, request, redirect, url_for, g
 from flask.ext.login import login_required
 from werkzeug import secure_filename
 from models import Entry, Tag
@@ -11,6 +11,8 @@ from app import app, db
 entries = Blueprint('entries', __name__, template_folder='templates')
 
 def entry_list(template, query, **context):
+    query = filter_status_by_user(query)
+
     valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
     query = query.filter(Entry.status.in_(valid_statuses))
     if request.args.get('q'):
@@ -20,11 +22,23 @@ def entry_list(template, query, **context):
             (Entry.title.contains(search)))
     return object_list(template, query, **context)
 
-def get_entry_or_404(slug):
-    valid_statuses = (Entry.STATUS_PUBLIC, Entry.STATUS_DRAFT)
-    return (Entry.query.filter((Entry.slug == slug ) &
-        (Entry.status.in_(valid_statuses))
-        ).first_or_404())
+def get_entry_or_404(slug, author=None):
+    query = Entry.query.filter(Entry.slug == slug)
+    if author:
+        query = query.filter(Entry.author == author)
+    else:
+        query = filter_status_by_user(query)
+    return query.first_or_404()
+
+def filter_status_by_user(query):
+    if not g.user.is_authenticated:
+        query = query.filter(Entry.status == Entry.STATUS_PUBLIC)
+    else:
+        query = query.filter(
+            (Entry.status == Entry.STATUS_PUBLIC) |
+            ((Entry.author == g.user) &
+            (Entry.status != Entry.STATUS_DELETED)))
+    return query
 
 @entries.route('/')
 def index():
@@ -65,7 +79,7 @@ def create():
     if request.method == 'POST':
        form = EntryForm(request.form)
        if form.validate():
-           entry = form.save_entry(Entry())
+           entry = form.save_entry(Entry(author=g.user))
            db.session.add(entry)
            db.session.commit()
            flash('Entry "%s" created successfully.' % entry.title, 'success')
@@ -82,7 +96,7 @@ def detail(slug):
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
 @login_required
 def edit(slug):
-    entry = get_entry_or_404(slug)
+    entry = get_entry_or_404(slug, author=None)
     if request.method == 'POST':
         form = EntryForm(request.form, obj=entry)
         if form.validate():
@@ -98,7 +112,7 @@ def edit(slug):
 @entries.route('/<slug>/delete/', methods=['GET', 'POST'])
 @login_required
 def delete(slug):
-    entry = get_entry_or_404(slug)
+    entry = get_entry_or_404(slug, author=None)
     if request.method == 'POST':
         entry.status = Entry.STATUS_DELETED
         db.session.add(entry)
