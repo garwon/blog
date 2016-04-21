@@ -46,6 +46,14 @@ class Entry(db.Model):
     def __repr__(self):
         return '<Entry: %s>' % self.title
 
+    @property
+    def tag_list(self):
+        return ', '.join(tag.name for tag in self.tags)
+
+    @property
+    def tease(self):
+      return self.body[:100]
+
 class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64))
