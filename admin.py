@@ -1,12 +1,30 @@
-from flask.ext.admin import Admin
+from flask import g, url_for, redirect, request
+from flask.ext.admin import Admin, AdminIndexView, expose
 from flask.ext.admin.contrib.sqla import ModelView
+from flask.ext.admin.contrib.fileadmin import FileAdmin
 from wtforms.fields import SelectField
 from wtforms.fields import PasswordField
 
 from app import app, db
-from models import Entry, Tag, User
+from models import Entry, Tag, User, entry_tags
 
-class EntryModelView(ModelView):
+class AdminAuthentication(object):
+    def is_accessible(self):
+        return g.user.is_authenticated and g.user.is_admin()
+
+class BaseModelView(AdminAuthentication, ModelView):
+    pass
+
+class BlogFileAdmin(AdminAuthentication, FileAdmin):
+    pass
+
+class SlugModelView(BaseModelView):
+    def on_model_change(self, form, model, is_created):
+        model.generate_slug()
+        return super(SlugModelView, self).on_model_change(
+            form, model, is_created)
+
+class EntryModelView(SlugModelView):
     _status_choices = [(choice, label) for choice, label in [
         (Entry.STATUS_PUBLIC, 'Public'),
         (Entry.STATUS_DRAFT, 'Draft'),
@@ -39,12 +57,12 @@ class EntryModelView(ModelView):
         }
     }
 
-class UserModelView(ModelView):
-    column_filters = ('email', 'name', 'active')
-    column_list = ['email', 'name', 'active', 'created_timestamp']
+class UserModelView(SlugModelView):
+    column_filters = ('email', 'name', 'admin', 'active')
+    column_list = ['email', 'name', 'admin', 'active', 'created_timestamp']
     column_searchable_list = ['email', 'name']
 
-    form_columns = ['email', 'password', 'name', 'active']
+    form_columns = ['email', 'password', 'name', 'admin', 'active']
     form_extra_fields = {
         'password': PasswordField('New password'),
     }
@@ -53,9 +71,18 @@ class UserModelView(ModelView):
         if form.password.data:
             model.password_hash = User.make_password(form.password.data)
         return super(UserModelView, self).on_model_change(form, model, is_created)
- 
-admin = Admin(app, 'Blog BackEnd')
+
+class IndexView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        if not (g.user.is_authenticated and g.user.is_admin()):
+            return redirect(url_for('login', next=request.path))
+        return self.render('admin/index.html')
+
+admin = Admin(app, 'Blog BackEnd', index_view=IndexView())
 admin.add_view(EntryModelView(Entry, db.session))
-admin.add_view(ModelView(Tag, db.session))
+admin.add_view(SlugModelView(Tag, db.session))
 admin.add_view(UserModelView(User, db.session))
+admin.add_view(
+    BlogFileAdmin(app.config['STATIC_DIR'], '/static/', name='Static Files'))
 

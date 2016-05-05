@@ -73,6 +73,7 @@ class User(db.Model):
     name = db.Column(db.String(64))
     slug = db.Column(db.String(64), unique=True)
     active = db.Column(db.Boolean, default=True)
+    admin = db.Column(db.Boolean, default=False)
     created_timestamp = db.Column(db.DateTime, default=datetime.datetime.now)
     entries = db.relationship('Entry', backref='author', lazy='dynamic')
 
@@ -90,6 +91,9 @@ class User(db.Model):
     def get_id(self):
         return self.id
     
+    def is_admin(self):
+        return self.admin
+
     def is_authenticated(self):
         return True
  
