@@ -33,6 +33,8 @@ class Entry(db.Model):
 
     tags = db.relationship('Tag', secondary=entry_tags,
         backref=db.backref('entries', lazy='dynamic'))
+    comments = db.relationship('Comment', backref='entry',
+        lazy='dynamic')
 
     def __init__(self, *args, **kwargs):
         super(Entry, self).__init__(*args, **kwargs)
@@ -127,3 +129,22 @@ class User(db.Model):
 @login_manager.user_loader
 def _user_loader(user_id):
     return User.query.get(int(user_id))
+
+class Comment(db.Model):
+    STATUS_PENDING_MODERATION = 0
+    STATUS_PUBLIC = 1
+    STATUS_SPAM = 8
+    STATUS_DELETED = 9
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64))
+    email = db.Column(db.String(64))
+    url = db.Column(db.String(100))
+    ip_address = db.Column(db.String(64))
+    body = db.Column(db.Text)
+    status = db.Column(db.SmallInteger, default=STATUS_PUBLIC)
+    created_timestamp = db.Column(db.DateTime, default=datetime.datetime.now)
+    entry_id = db.Column(db.Integer, db.ForeignKey('entry.id'))
+
+    def __repr__(self):
+        return '<Comment from %r>' % (self.name,)

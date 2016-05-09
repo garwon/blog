@@ -5,7 +5,7 @@ from flask.ext.login import login_required
 from werkzeug import secure_filename
 from models import Entry, Tag
 from helpers import object_list
-from entries.forms import EntryForm, ImageForm
+from entries.forms import EntryForm, ImageForm, CommentForm
 from app import app, db
 
 entries = Blueprint('entries', __name__, template_folder='templates')
@@ -91,7 +91,8 @@ def create():
 @entries.route('/<slug>/')
 def detail(slug):
     entry = get_entry_or_404(slug)
-    return render_template('entries/detail.html', entry=entry)
+    form = CommentForm(data={'entry_id': entry.id})
+    return render_template('entries/detail.html', entry=entry, form=form)
 
 @entries.route('/<slug>/edit/', methods=['GET', 'POST'])
 @login_required

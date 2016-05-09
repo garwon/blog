@@ -23,4 +23,7 @@
 
 {% block content %}
   {{ entry.body }}
+
+  <h4 id="comment-form">Submit a comment</h4>
+  {% include "entries/includes/comment_form.html" %}
 {% endblock %}
